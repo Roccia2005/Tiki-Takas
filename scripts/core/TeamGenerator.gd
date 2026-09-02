@@ -1,13 +1,14 @@
 class_name TeamGenerator
 extends RefCounted
 
-## Generatore procedurale di calciatori e rose iniziali (GDD §5 e §7).
+## Generatore procedurale di calciatori e rose iniziali (GDD §2.3, §5 e §7).
 ##
 ## Utility interamente statica: non va istanziata né registrata come autoload.
-## I cartellini nascono senza archetipi né allenamenti, come previsto per la
-## generazione a inizio run.
+## I cartellini nascono senza archetipi né allenamenti, salvo i tratti
+## identitari della squadra scelta (GDD §2.3).
 ## [codeblock]
-## var team := TeamGenerator.generate_starter_team(GameCatalog.get_formation("4-4-2"))
+## var standard := TeamGenerator.generate_starter_team()
+## var italiana := TeamGenerator.generate_starter_team(null, "Italiana")  # 5-3-2, DIF +3
 ## var riserva := TeamGenerator.generate_player("CEN")
 ## [/codeblock]
 
@@ -41,6 +42,37 @@ const ARCHETYPE_SLOT_WEIGHTS := [40, 30, 16, 9, 4, 1]
 ## Tentativi massimi per estrarre un nome non già assegnato nella stessa rosa.
 const MAX_NAME_ATTEMPTS: int = 24
 
+## GDD §2.3: modulo di partenza di ogni squadra selezionabile.
+const TEAM_FORMATIONS := {
+	"Standard": "4-4-2",
+	"Italiana": "5-3-2",
+	"Spagnola": "4-3-3",
+	"Portoghese": "4-3-2-1",
+	"Brasiliana": "4-2-4",
+	"Inglese": "4-4-2",
+}
+
+## GDD §2.3: squadre il cui tratto agisce già sui cartellini alla generazione.
+## La Standard non ha modificatori e il tratto della Spagnola (moltiplicatore per
+## passaggio consecutivo) vale in partita, non sulla rosa.
+const GENERATION_TRAITS := ["Italiana", "Portoghese", "Brasiliana", "Inglese"]
+
+## GDD §2.3 (Italiana): Forza in più per ogni difensore.
+const ITALIANA_DEFENDER_POWER_BONUS: int = 3
+
+## GDD §2.3 (Portoghese): slot archetipo garantiti al Fuoriclasse.
+const PORTOGHESE_CHAMPION_SLOTS: int = 5
+
+## GDD §2.3 (Brasiliana): quante ali offensive ricevono lo Skiller.
+const BRASILIANA_SKILLER_COUNT: int = 2
+
+## GDD §2.3 (Inglese): moltiplicatore di Gittata per portiere e difensori.
+const INGLESE_RANGE_MULTIPLIER: float = 1.5
+
+## Ordinata centrale del campo sulla griglia pitch 1000x600 (GDD §9): serve a
+## distinguere i giocatori centrali dalle ali.
+const PITCH_CENTER_Y: float = 300.0
+
 const FIRST_NAMES := [
 	"Alessio", "Matteo", "Davide", "Luca", "Simone", "Andrea", "Gabriele",
 	"Nicolò", "Tommaso", "Federico", "Diego", "Rafael", "Iker", "Milos",
@@ -61,14 +93,18 @@ static var _seeded := false
 ## Genera la rosa iniziale di una run: 11 titolari casuali senza potenziamenti,
 ## assegnati agli slot del modulo indicato secondo il ruolo che ogni slot
 ## prevede (GDD §5 e §9). La panchina resta vuota, come da GDD §5.
-## Se [param formation] è null viene caricato il 4-4-2 dal GameCatalog.
-## Restituisce null solo se nemmeno il modulo di default è disponibile.
-static func generate_starter_team(formation: FormationData = null, team_name: String = DEFAULT_TEAM_NAME) -> TeamData:
+## Se [param formation] è null viene caricato dal GameCatalog il modulo di
+## partenza che il GDD §2.3 assegna a [param team_name], con ripiego sul 4-4-2.
+## Con [param apply_trait] attivo la rosa riceve subito il tratto identitario
+## della squadra, se ne ha uno che agisce alla generazione.
+## Restituisce null solo se nemmeno il modulo richiesto è disponibile.
+static func generate_starter_team(formation: FormationData = null, team_name: String = DEFAULT_TEAM_NAME, apply_trait: bool = true) -> TeamData:
 	var used_formation := formation
+	var formation_name := _formation_name_for(team_name)
 	if used_formation == null:
-		used_formation = GameCatalog.get_formation(DEFAULT_FORMATION)
+		used_formation = GameCatalog.get_formation(formation_name)
 	if used_formation == null:
-		push_error("TeamGenerator: modulo '%s' non presente nel catalogo" % DEFAULT_FORMATION)
+		push_error("TeamGenerator: modulo '%s' non presente nel catalogo" % formation_name)
 		return null
 
 	var team := TeamData.new()
@@ -86,6 +122,9 @@ static func generate_starter_team(formation: FormationData = null, team_name: St
 			push_warning("TeamGenerator: ruolo non definito per lo slot %d" % slot)
 		# set_starter registra il cartellino anche in team.players.
 		team.set_starter(slot, _build_player(role, _unique_name(used_names)))
+
+	if apply_trait:
+		apply_team_trait(team, team_name)
 	return team
 
 
@@ -100,6 +139,84 @@ static func generate_player(role: String) -> PlayerData:
 static func set_seed(seed_value: int) -> void:
 	_rng.seed = seed_value
 	_seeded = true
+
+
+## Applica alla rosa già generata il tratto identitario della squadra indicata
+## (GDD §2.3):
+## [br]- Italiana: +3 alla Forza di ogni difensore.
+## [br]- Portoghese: la punta più avanzata sale a 5 slot archetipo e riceve Bomber.
+## [br]- Brasiliana: le due ali offensive più larghe ricevono Skiller.
+## [br]- Inglese: +50% di Gittata a portiere e difensori.
+## [br]Restituisce true solo se il tratto ha davvero modificato i cartellini:
+## Standard non ha modificatori e il tratto della Spagnola agisce in partita.
+static func apply_team_trait(team: TeamData, trait_name: String) -> bool:
+	if team == null:
+		push_warning("TeamGenerator: impossibile applicare un tratto a una rosa null")
+		return false
+	match trait_name:
+		"Italiana":
+			_apply_italiana(team)
+		"Portoghese":
+			_apply_portoghese(team)
+		"Brasiliana":
+			_apply_brasiliana(team)
+		"Inglese":
+			_apply_inglese(team)
+		_:
+			return false
+	return true
+
+
+## Nomi delle squadre il cui tratto viene applicato alla generazione (GDD §2.3).
+static func get_supported_traits() -> Array[String]:
+	var traits: Array[String] = []
+	traits.assign(GENERATION_TRAITS)
+	return traits
+
+
+## Modulo di partenza previsto dal GDD §2.3 per la squadra indicata, con ripiego
+## sul 4-4-2 per i nomi personalizzati.
+static func _formation_name_for(team_name: String) -> String:
+	if not TEAM_FORMATIONS.has(team_name):
+		return DEFAULT_FORMATION
+	var mapped: String = TEAM_FORMATIONS[team_name]
+	return mapped
+
+
+## Italiana: catenaccio, ogni difensore parte con Forza maggiorata.
+static func _apply_italiana(team: TeamData) -> void:
+	for player in team.players:
+		if player != null and player.role == "DIF":
+			player.power += ITALIANA_DEFENDER_POWER_BONUS
+
+
+## Portoghese: il Fuoriclasse è la punta più avanzata e centrale, con tutti gli
+## slot archetipo aperti e Bomber già equipaggiato.
+static func _apply_portoghese(team: TeamData) -> void:
+	var champion := _find_most_advanced(team, "ATT")
+	if champion == null:
+		push_warning("TeamGenerator: tratto Portoghese senza attaccanti schierati")
+		return
+	champion.archetype_slots = PORTOGHESE_CHAMPION_SLOTS
+	_equip_archetype(champion, "bomber")
+
+
+## Brasiliana: lo Skiller va alle due pedine offensive più larghe, cioè le ali.
+static func _apply_brasiliana(team: TeamData) -> void:
+	var wingers := _find_widest_offensive(team, BRASILIANA_SKILLER_COUNT)
+	if wingers.size() < BRASILIANA_SKILLER_COUNT:
+		push_warning("TeamGenerator: tratto Brasiliana con meno di %d pedine offensive" % BRASILIANA_SKILLER_COUNT)
+	for winger in wingers:
+		_equip_archetype(winger, "skiller")
+
+
+## Inglese: palla lunga e pedalare, gittata maggiorata per portiere e difensori.
+static func _apply_inglese(team: TeamData) -> void:
+	for player in team.players:
+		if player == null:
+			continue
+		if player.role == "POR" or player.role == "DIF":
+			player.range_dist *= INGLESE_RANGE_MULTIPLIER
 
 
 ## Cartellino con età, potenza, gittata e slot archetipo casuali entro i limiti
@@ -172,3 +289,76 @@ static func _ensure_seeded() -> void:
 	if not _seeded:
 		_rng.randomize()
 		_seeded = true
+
+
+## Titolare del ruolo indicato più vicino alla porta avversaria; a pari ascissa
+## vince quello più centrale. Null se nessuno slot ospita quel ruolo.
+static func _find_most_advanced(team: TeamData, role: String) -> PlayerData:
+	var best: PlayerData = null
+	var best_x := -1.0
+	var best_offset := INF
+	for slot in range(1, TeamData.LINEUP_SIZE + 1):
+		var player := team.get_starter(slot)
+		if player == null or player.role != role:
+			continue
+		var field_pos := _slot_position(team, slot)
+		var offset := absf(field_pos.y - PITCH_CENTER_Y)
+		if field_pos.x > best_x or (is_equal_approx(field_pos.x, best_x) and offset < best_offset):
+			best = player
+			best_x = field_pos.x
+			best_offset = offset
+	return best
+
+
+## Titolari offensivi (ATT o CEN) ordinati dal più larghe rispetto all'asse del
+## campo: sono le ali, destinatarie naturali dello Skiller (GDD §2.3).
+## A pari larghezza precede chi è più avanzato.
+static func _find_widest_offensive(team: TeamData, count: int) -> Array[PlayerData]:
+	var ranked: Array[Dictionary] = []
+	for slot in range(1, TeamData.LINEUP_SIZE + 1):
+		var player := team.get_starter(slot)
+		if player == null:
+			continue
+		if player.role != "ATT" and player.role != "CEN":
+			continue
+		var field_pos := _slot_position(team, slot)
+		var wide := absf(field_pos.y - PITCH_CENTER_Y)
+		var insert_at := ranked.size()
+		for index in ranked.size():
+			var other_wide: float = ranked[index]["wide"]
+			var other_x: float = ranked[index]["x"]
+			if wide > other_wide or (is_equal_approx(wide, other_wide) and field_pos.x > other_x):
+				insert_at = index
+				break
+		ranked.insert(insert_at, {"player": player, "wide": wide, "x": field_pos.x})
+
+	var picked: Array[PlayerData] = []
+	for entry in ranked:
+		if picked.size() >= count:
+			break
+		var player: PlayerData = entry["player"]
+		picked.append(player)
+	return picked
+
+
+## Coordinate dello slot nel modulo attivo, Vector2.ZERO se manca il modulo.
+static func _slot_position(team: TeamData, slot: int) -> Vector2:
+	if team.current_formation == null:
+		return Vector2.ZERO
+	return team.current_formation.get_slot_position(slot)
+
+
+## Equipaggia l'archetipo indicato prendendolo dal GameCatalog e allarga se serve
+## gli slot del cartellino, fino al limite di PlayerData.MAX_ARCHETYPE_SLOTS.
+static func _equip_archetype(player: PlayerData, archetype_id: String) -> bool:
+	if player == null:
+		return false
+	var archetype := GameCatalog.get_archetype(archetype_id)
+	if archetype == null:
+		push_warning("TeamGenerator: archetipo '%s' non presente nel catalogo" % archetype_id)
+		return false
+	if player.archetypes.has(archetype):
+		return false
+	player.archetypes.append(archetype)
+	player.archetype_slots = mini(PlayerData.MAX_ARCHETYPE_SLOTS, maxi(player.archetype_slots, player.archetypes.size()))
+	return true
