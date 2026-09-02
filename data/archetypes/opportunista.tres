@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ArchetypeData" format=3]
+
+[ext_resource type="Script" uid="uid://cy73y1j7dwpqg" path="res://scripts/resources/ArchetypeData.gd" id="1_arwgc"]
+
+[resource]
+resource_name = "Opportunista"
+script = ExtResource("1_arwgc")
+id = "opportunista"
+name = "Opportunista"
+description = "Se riceve il pallone a meno di 200 unità dalla porta avversaria, la sua Forza base raddoppia (x2) per il tiro."

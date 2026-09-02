@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="TalismanData" format=3]
+
+[ext_resource type="Script" uid="uid://be0kuqoo116i1" path="res://scripts/resources/TalismanData.gd" id="1_uhxbk"]
+
+[resource]
+resource_name = "Guanto Rinforzato"
+script = ExtResource("1_uhxbk")
+id = "guanto_rinforzato"
+name = "Guanto Rinforzato"
+description = "In caso di Parata Fortunata, il portiere subisce il 75% del danno anziché il 50%."

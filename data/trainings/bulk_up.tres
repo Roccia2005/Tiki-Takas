@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="TrainingData" format=3]
+
+[ext_resource type="Script" uid="uid://cwneks151j2h7" path="res://scripts/resources/TrainingData.gd" id="1_a82ol"]
+
+[resource]
+resource_name = "Bulk-Up"
+script = ExtResource("1_a82ol")
+id = "bulk_up"
+name = "Bulk-Up"
+description = "Aumenta in modo permanente la Potenza base del calciatore di +3."

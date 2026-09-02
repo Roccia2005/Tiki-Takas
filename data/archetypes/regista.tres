@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ArchetypeData" format=3]
+
+[ext_resource type="Script" uid="uid://cy73y1j7dwpqg" path="res://scripts/resources/ArchetypeData.gd" id="1_x3wvw"]
+
+[resource]
+resource_name = "Regista"
+script = ExtResource("1_x3wvw")
+id = "regista"
+name = "Regista"
+description = "Quando effettua un passaggio verso un compagno, conferisce al ricevente +50% di Gittata per il tocco successivo."

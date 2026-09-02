@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ArchetypeData" format=3]
+
+[ext_resource type="Script" uid="uid://cy73y1j7dwpqg" path="res://scripts/resources/ArchetypeData.gd" id="1_5hqxe"]
+
+[resource]
+resource_name = "Veterano"
+script = ExtResource("1_5hqxe")
+id = "veterano"
+name = "Veterano"
+description = "Se ha un'età pari o superiore a 33 anni, ha un costo d'acquisto dimezzato al mercato e conferisce +5 alla Forza se schierato con almeno due compagni under 23."

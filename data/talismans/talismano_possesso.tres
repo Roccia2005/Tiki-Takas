@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="TalismanData" format=3]
+
+[ext_resource type="Script" uid="uid://be0kuqoo116i1" path="res://scripts/resources/TalismanData.gd" id="1_6wlmr"]
+
+[resource]
+resource_name = "Talismano Possesso"
+script = ExtResource("1_6wlmr")
+id = "talismano_possesso"
+name = "Talismano Possesso"
+description = "+2 passaggi disponibili, -1 tiro massimo per la squadra."

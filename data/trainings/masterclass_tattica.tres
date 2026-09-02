@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="TrainingData" format=3]
+
+[ext_resource type="Script" uid="uid://cwneks151j2h7" path="res://scripts/resources/TrainingData.gd" id="1_l0qlp"]
+
+[resource]
+resource_name = "Masterclass Tattica"
+script = ExtResource("1_l0qlp")
+id = "masterclass_tattica"
+name = "Masterclass Tattica"
+description = "Converte e cambia in modo permanente il Ruolo del calciatore tra POR, DIF, CEN e ATT."
+rarity = 2
+cost = 7

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ArchetypeData" format=3]
+
+[ext_resource type="Script" uid="uid://cy73y1j7dwpqg" path="res://scripts/resources/ArchetypeData.gd" id="1_2iq2v"]
+
+[resource]
+resource_name = "Muro"
+script = ExtResource("1_2iq2v")
+id = "muro"
+name = "Muro"
+description = "Se riceve la palla a seguito di una respinta casuale post-tiro, la sua potenza aumenta per l'intera durata di quell'azione."

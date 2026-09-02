@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ArchetypeData" format=3]
+
+[ext_resource type="Script" uid="uid://cy73y1j7dwpqg" path="res://scripts/resources/ArchetypeData.gd" id="1_uhm4q"]
+
+[resource]
+resource_name = "Calamita"
+script = ExtResource("1_uhm4q")
+id = "calamita"
+name = "Calamita"
+description = "Raddoppia la probabilità che la palla vagante finisca a lui dopo una respinta."

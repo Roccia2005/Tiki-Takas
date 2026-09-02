@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ArchetypeData" format=3]
+
+[ext_resource type="Script" uid="uid://cy73y1j7dwpqg" path="res://scripts/resources/ArchetypeData.gd" id="1_25gtp"]
+
+[resource]
+resource_name = "Torre Aerea"
+script = ExtResource("1_25gtp")
+id = "torre_aerea"
+name = "Torre Aerea"
+description = "Se riceve la sfera da un passaggio lungo, superiore a 400 unità, il suo tiro successivo ottiene un bonus del +50% alla potenza."

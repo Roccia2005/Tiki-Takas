@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ArchetypeData" format=3]
+
+[ext_resource type="Script" uid="uid://cy73y1j7dwpqg" path="res://scripts/resources/ArchetypeData.gd" id="1_8bt0c"]
+
+[resource]
+resource_name = "Bomber"
+script = ExtResource("1_8bt0c")
+id = "bomber"
+name = "Bomber"
+description = "La potenza del giocatore viene moltiplicata per 1.5 ogni volta che segna un gol."

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ArchetypeData" format=3]
+
+[ext_resource type="Script" uid="uid://cy73y1j7dwpqg" path="res://scripts/resources/ArchetypeData.gd" id="1_xmo61"]
+
+[resource]
+resource_name = "Vivaio DOC"
+script = ExtResource("1_xmo61")
+id = "vivaio_doc"
+name = "Vivaio DOC"
+description = "Riceve permanentemente +2 alla Forza ogni volta che invecchia tramite l'allenamento Compleanno mantenendosi under 23."

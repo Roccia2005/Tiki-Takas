@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ArchetypeData" format=3]
+
+[ext_resource type="Script" uid="uid://cy73y1j7dwpqg" path="res://scripts/resources/ArchetypeData.gd" id="1_reny8"]
+
+[resource]
+resource_name = "Skiller"
+script = ExtResource("1_reny8")
+id = "skiller"
+name = "Skiller"
+description = "A ogni passaggio effettuato, la sua pedina avanza geometricamente di 50 unità verso la porta avversaria per quella partita."

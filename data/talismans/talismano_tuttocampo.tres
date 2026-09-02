@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="TalismanData" format=3]
+
+[ext_resource type="Script" uid="uid://be0kuqoo116i1" path="res://scripts/resources/TalismanData.gd" id="1_quex3"]
+
+[resource]
+resource_name = "Talismano Tuttocampo"
+script = ExtResource("1_quex3")
+id = "talismano_tuttocampo"
+name = "Talismano Tuttocampo"
+description = "Passaggi e tiri non subiscono mai perdite di potenza legate alla distanza su tutto il campo."
+rarity = 3
+cost = 15

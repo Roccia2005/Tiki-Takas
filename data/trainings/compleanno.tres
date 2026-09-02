@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="TrainingData" format=3]
+
+[ext_resource type="Script" uid="uid://cwneks151j2h7" path="res://scripts/resources/TrainingData.gd" id="1_5mvsm"]
+
+[resource]
+resource_name = "Compleanno"
+script = ExtResource("1_5mvsm")
+id = "compleanno"
+name = "Compleanno"
+description = "Fa avanzare l'età del calciatore di 1 anno: sotto i 23 anni +6 alla Forza e 25% di probabilità di sbloccare un archetipo casuale, tra 23 e 29 anni +3 alla Forza, dai 30 anni -3 alla Forza per ogni anno compiuto oltre i 29."

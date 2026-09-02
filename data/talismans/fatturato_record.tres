@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="TalismanData" format=3]
+
+[ext_resource type="Script" uid="uid://be0kuqoo116i1" path="res://scripts/resources/TalismanData.gd" id="1_3ufd1"]
+
+[resource]
+resource_name = "Fatturato Record"
+script = ExtResource("1_3ufd1")
+id = "fatturato_record"
+name = "Fatturato Record"
+description = "Ottieni +1 Football Coin bonus per ogni giocatore venduto al Calcio Mercato."

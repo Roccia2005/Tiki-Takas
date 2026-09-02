@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ArchetypeData" format=3]
+
+[ext_resource type="Script" uid="uid://cy73y1j7dwpqg" path="res://scripts/resources/ArchetypeData.gd" id="1_i5xpq"]
+
+[resource]
+resource_name = "Baller"
+script = ExtResource("1_i5xpq")
+id = "baller"
+name = "Baller"
+description = "Il passaggio effettuato da questo giocatore non consuma il contatore dei passaggi disponibili."

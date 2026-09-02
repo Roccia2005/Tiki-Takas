@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="FormationData" format=3]
+
+[ext_resource type="Script" uid="uid://duajudvvb1h8k" path="res://scripts/resources/FormationData.gd" id="1_asx8o"]
+
+[resource]
+resource_name = "4-5-1"
+script = ExtResource("1_asx8o")
+formation_name = "4-5-1"
+slot_coordinates = Dictionary[int, Vector2]({
+1: Vector2(60, 300),
+2: Vector2(230, 90),
+3: Vector2(200, 230),
+4: Vector2(200, 370),
+5: Vector2(230, 510),
+6: Vector2(520, 90),
+7: Vector2(480, 210),
+8: Vector2(430, 300),
+9: Vector2(480, 390),
+10: Vector2(520, 510),
+11: Vector2(830, 300)
+})

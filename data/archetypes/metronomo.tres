@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ArchetypeData" format=3]
+
+[ext_resource type="Script" uid="uid://cy73y1j7dwpqg" path="res://scripts/resources/ArchetypeData.gd" id="1_n4801"]
+
+[resource]
+resource_name = "Metronomo"
+script = ExtResource("1_n4801")
+id = "metronomo"
+name = "Metronomo"
+description = "I passaggi a corto raggio, inferiori a 200 unità, effettuati da lui aggiungono il doppio della Forza (+100%)."

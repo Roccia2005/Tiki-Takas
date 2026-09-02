@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="TalismanData" format=3]
+
+[ext_resource type="Script" uid="uid://be0kuqoo116i1" path="res://scripts/resources/TalismanData.gd" id="1_8xjr8"]
+
+[resource]
+resource_name = "Gabbia Difensiva"
+script = ExtResource("1_8xjr8")
+id = "gabbia_difensiva"
+name = "Gabbia Difensiva"
+description = "I Difensori ottengono permanentemente +2 alla Forza quando effettuano un passaggio."

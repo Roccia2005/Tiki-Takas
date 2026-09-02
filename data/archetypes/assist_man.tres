@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ArchetypeData" format=3]
+
+[ext_resource type="Script" uid="uid://cy73y1j7dwpqg" path="res://scripts/resources/ArchetypeData.gd" id="1_maq43"]
+
+[resource]
+resource_name = "Assist Man"
+script = ExtResource("1_maq43")
+id = "assist_man"
+name = "Assist Man"
+description = "Se serve un attaccante che calcia direttamente a rete al tocco successivo, il tiro riceve un moltiplicatore fisso x1.3."

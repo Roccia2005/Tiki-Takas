@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ArchetypeData" format=3]
+
+[ext_resource type="Script" uid="uid://cy73y1j7dwpqg" path="res://scripts/resources/ArchetypeData.gd" id="1_gd3bw"]
+
+[resource]
+resource_name = "Bandiera"
+script = ExtResource("1_gd3bw")
+id = "bandiera"
+name = "Bandiera"
+description = "Ottiene permanentemente +1 alla Forza per ogni Ante superata mantenendolo nella formazione titolare."
