@@ -1,0 +1,62 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" uid="uid://dnpfn6agn8ylw" path="res://scenes/main/Main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://scenes/match/MatchView.tscn" id="2_match"]
+[ext_resource type="PackedScene" path="res://scenes/shop/ShopView.tscn" id="3_shop"]
+[ext_resource type="Script" uid="uid://d2ai8ugj5eg1r" path="res://scenes/ui/TitleScreen.gd" id="4_title"]
+[ext_resource type="Script" uid="uid://b0n6uo07f0htr" path="res://scenes/ui/MatchResultModal.gd" id="5_result"]
+[ext_resource type="Script" uid="uid://db1yvlmi624lj" path="res://scenes/ui/GameOverScreen.gd" id="6_over"]
+[ext_resource type="Script" uid="uid://bnw8lo0r615wm" path="res://scenes/ui/VictoryScreen.gd" id="7_victory"]
+
+[node name="Main" type="Node"]
+script = ExtResource("1_main")
+
+[node name="StageLayer" type="CanvasLayer" parent="."]
+
+[node name="MatchView" parent="StageLayer" instance=ExtResource("2_match")]
+visible = false
+autostart_demo_run = false
+
+[node name="ShopView" parent="StageLayer" instance=ExtResource("3_shop")]
+visible = false
+
+[node name="OverlayLayer" type="CanvasLayer" parent="."]
+
+[node name="TitleScreen" type="Control" parent="OverlayLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("4_title")
+
+[node name="MatchResultModal" type="Control" parent="OverlayLayer"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("5_result")
+
+[node name="GameOverScreen" type="Control" parent="OverlayLayer"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("6_over")
+
+[node name="VictoryScreen" type="Control" parent="OverlayLayer"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("7_victory")

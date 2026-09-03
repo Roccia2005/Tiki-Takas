@@ -83,3 +83,33 @@ per mostrare in anteprima gli stessi numeri che il core calcolerà. Il puntament
 converte il mouse in coordinate pitch con `to_local(get_global_mouse_position())`
 e il bersaglio si individua per raggio, senza `Area2D` né fisica, così la scena
 resta verificabile in headless.
+
+## 4. Convenzioni di scenes/shop/, scenes/ui/ e scenes/main/ (Sprint 8)
+
+Il ciclo roguelike completo vive nel layer visuale, che resta **sola lettura**
+sullo stato del core: `GameManager` e `ShopManager` conservano ogni formula, le
+schermate leggono e inoltrano l'input. Rendering sempre programmatico via
+`_draw()` e `ThemeDB.fallback_font`, nessun asset esterno (GDD §12).
+
+| Script | Nodo base | Ruolo |
+| --- | --- | --- |
+| `scenes/ui/UIStyle.gd` | `RefCounted` statico | Kit condiviso: palette, stelle rarità, `make_label/make_paragraph/make_button/make_option`, `draw_panel/draw_bar/draw_rule` |
+| `scenes/ui/TitleScreen.gd` | `Control` | Menu iniziale: squadra, modulo, rosa, comandi, `start_requested` |
+| `scenes/ui/MatchResultModal.gd` | `Control` | Esito match: punteggio, statistiche azione, Football Coins guadagnati, `continue_requested` |
+| `scenes/ui/GameOverScreen.gd` | `Control` | Fine run: Ante raggiunta, match giocati/vinti, gol, boss, `restart_requested` |
+| `scenes/ui/VictoryScreen.gd` | `Control` | Coppa alzata dopo l'Ante 6: trofeo vettoriale e albo d'oro, `menu_requested` |
+| `scenes/shop/ShopCard.gd` | `Control` | Slot di vetrina: calciatore, talismano o allenamento con rarità, effetto e costo |
+| `scenes/shop/ShopView.gd` | `Control` | Calcio Mercato: 3+2+1 slot, reroll progressivo, rosa con valori di cessione, `next_match_requested` |
+| `scenes/main/Main.gd` | `Node` | Orchestratore della run: macchina a stati e proprietario del `GameManager` |
+
+`Main.tscn` è la nuova scena eseguibile (`run/main_scene`). Monta `StageLayer`
+con `MatchView` e `ShopView` istanziate (`autostart_demo_run = false`) e
+`OverlayLayer` con le quattro schermate di stato; la commutazione avviene per
+`visible` e `process_mode`, senza ricaricare l'applicazione.
+
+Macchina a stati di `Main.Stage`:
+`MENU -> MATCH / BOSS_MATCH -> SHOP -> MATCH ... -> GAME_OVER | VICTORY`.
+`MatchView` notifica l'esito con `signal match_finished(won: bool)` (una sola
+volta per partita collegata), `Main` lo registra con `record_match_result()` e
+decide la fase successiva leggendo `run.run_state`: `SHOP_PHASE` apre il
+mercato dopo il boss, `GAME_OVER` e `CUP_VICTORY` chiudono la run.

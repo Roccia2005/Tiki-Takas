@@ -12,6 +12,10 @@ extends Node2D
 ## o una palla persa un clic (o SPAZIO) fa ripartire l'azione, R avvia una
 ## nuova partita di prova.
 
+## Partita conclusa: [code]won[/code] è true se il portiere è stato battuto
+## (GDD §7). [Main] la usa per registrare il risultato nella run.
+signal match_finished(won: bool)
+
 ## Stato dell'interazione col mouse.
 enum InputMode {
 	IDLE,
@@ -64,6 +68,7 @@ var _obstacle_tokens: Array[PlayerToken] = []
 var _keeper_token: PlayerToken = null
 var _input_mode: int = InputMode.IDLE
 var _hovered: PlayerToken = null
+var _finished_emitted: bool = false
 
 
 func _ready() -> void:
@@ -80,6 +85,7 @@ func bind_controller(match_controller: MatchController, game_run: GameManager = 
 	controller = match_controller
 	run = game_run
 	_input_mode = InputMode.IDLE
+	_finished_emitted = false
 	_bind_views()
 
 
@@ -291,6 +297,7 @@ func _after_move() -> void:
 	if controller.is_match_over():
 		_input_mode = InputMode.MATCH_OVER
 		_hud.set_hint(_match_over_hint())
+		_emit_finished()
 		return
 	if controller.current_ball_carrier == null:
 		_input_mode = InputMode.WAITING_RESTART
@@ -305,6 +312,7 @@ func _start_next_action() -> void:
 	if controller.is_match_over():
 		_input_mode = InputMode.MATCH_OVER
 		_hud.set_hint(_match_over_hint())
+		_emit_finished()
 		return
 	if not controller.start_action():
 		_hud.flash("NESSUNA AZIONE DISPONIBILE", MatchHUD.FLASH_BAD)
@@ -315,6 +323,13 @@ func _start_next_action() -> void:
 	_refresh_all()
 	_hud.set_hint(_default_hint())
 
+
+## Annuncia la fine del match una sola volta per partita collegata (GDD §7).
+func _emit_finished() -> void:
+	if _finished_emitted or controller == null:
+		return
+	_finished_emitted = true
+	match_finished.emit(controller.match_result == MatchController.MatchResult.WIN)
 
 func _refresh_all() -> void:
 	_refresh_tokens()
