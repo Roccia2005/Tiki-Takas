@@ -1,0 +1,41 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" uid="uid://285h3dynd5aw" path="res://scenes/match/MatchView.gd" id="1_view"]
+[ext_resource type="Script" uid="uid://db70gqft8gohu" path="res://scenes/match/PitchView.gd" id="2_pitch"]
+[ext_resource type="Script" uid="uid://blcpxcvmcr6c7" path="res://scenes/match/ShotConeVisualizer.gd" id="3_cone"]
+[ext_resource type="Script" uid="uid://c44xpk1oxd5ec" path="res://scenes/match/TrajectoryLine.gd" id="4_trajectory"]
+[ext_resource type="Script" uid="uid://bekg8wf5cmm34" path="res://scenes/match/BallToken.gd" id="5_ball"]
+[ext_resource type="Script" uid="uid://fduq16ap6nj7" path="res://scenes/match/MatchHUD.gd" id="6_hud"]
+
+[node name="MatchView" type="Node2D"]
+script = ExtResource("1_view")
+
+[node name="PitchRoot" type="Node2D" parent="."]
+position = Vector2(210, 90)
+scale = Vector2(1.5, 1.5)
+
+[node name="PitchView" type="Node2D" parent="PitchRoot"]
+script = ExtResource("2_pitch")
+
+[node name="ShotCone" type="Node2D" parent="PitchRoot"]
+script = ExtResource("3_cone")
+
+[node name="TrajectoryLine" type="Node2D" parent="PitchRoot"]
+script = ExtResource("4_trajectory")
+
+[node name="TokensRoot" type="Node2D" parent="PitchRoot"]
+
+[node name="BallToken" type="Node2D" parent="PitchRoot"]
+script = ExtResource("5_ball")
+
+[node name="HUDLayer" type="CanvasLayer" parent="."]
+
+[node name="MatchHUD" type="Control" parent="HUDLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("6_hud")

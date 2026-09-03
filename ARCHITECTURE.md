@@ -55,3 +55,31 @@ formule del Calcio Mercato; `ShopManager` non conosce `GameManager`, così la
 dipendenza resta a senso unico ed evita i cyclic reference di GDScript. Nessun
 autoload è quindi necessario: sarà la scena radice della UI a tenere il
 riferimento all'istanza della run.
+
+## 3. Convenzioni di scenes/match/ (layer visuale)
+
+Il campo giocabile vive in `res://scenes/match/`, unica cartella dove sono
+ammessi nodi `Node2D`/`Control`. Tutto il rendering è **programmatico** via
+`_draw()`: nessun asset PNG, solo primitive vettoriali e `ThemeDB.fallback_font`.
+
+| Script | Nodo base | Ruolo |
+| --- | --- | --- |
+| `PitchView.gd` | `Node2D` | Campo 1000x600, linee, cerchio, aree e porte a (0,300) / (1000,300) (GDD §9) |
+| `PlayerToken.gd` | `Node2D` | Pedina vettoriale: colore per lato, ruolo, numero, Potenza efficace, raggio di contrasto |
+| `BallToken.gd` | `Node2D` | Palla, segue `current_ball_carrier` / `ball_position` con interpolazione |
+| `TrajectoryLine.gd` | `Node2D` | Linea di mira passaggio/tiro con stati valido / fuori Gittata / non valido / tiro |
+| `ShotConeVisualizer.gd` | `Node2D` | Cono di tiro a 18 gradi e sagome ostruenti con malus (GDD §4, §4.1) |
+| `MatchHUD.gd` | `Control` | Punteggio, passaggi, tiri, Potenza Azione, punti parata, messaggi flash |
+| `MatchView.gd` | `Node2D` | Controller di scena: mouse drag&release, chiama `execute_pass()` / `execute_shot()` / `start_action()` |
+
+`MatchView.tscn` è la scena eseguibile (`run/main_scene`) e monta
+`PitchRoot` (offset 210,90 e scala 1.5 dentro il canvas 1920x1080) con
+`PitchView`, `ShotCone`, `TrajectoryLine`, `TokensRoot`, `BallToken`, più un
+`HUDLayer` (`CanvasLayer`) che contiene `MatchHUD`.
+
+Regola invariata: **il layer visuale non contiene formule di gioco**. Legge lo
+stato di `MatchController` e riusa `ActionResolver` (cono, gittata, malus) solo
+per mostrare in anteprima gli stessi numeri che il core calcolerà. Il puntamento
+converte il mouse in coordinate pitch con `to_local(get_global_mouse_position())`
+e il bersaglio si individua per raggio, senza `Area2D` né fisica, così la scena
+resta verificabile in headless.
