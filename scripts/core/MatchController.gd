@@ -75,6 +75,36 @@ const FALLBACK_RESOURCES := Vector2i(6, 4)
 ## GDD §10.2: il passaggio del Baller non consuma il contatore dei passaggi.
 const BALLER_ARCHETYPE_ID := "baller"
 
+## Fasce di respinta post-tiro parato: 45% ATT, 40% CEN, 15% DIF (GDD §4).
+const REBOUND_WEIGHTS := {"ATT": 45.0, "CEN": 40.0, "DIF": 15.0}
+
+## Fasce di respinta post-tiro con il Rinvio Telecomandato equipaggiato,
+## 60% ATT, 30% CEN, 10% DIF (GDD §10.1).
+const REBOUND_WEIGHTS_REMOTE := {"ATT": 60.0, "CEN": 30.0, "DIF": 10.0}
+
+## Fasce di respinta difensiva su palla persa: 60% DIF, 30% CEN, 10% ATT (GDD §4.1).
+const TURNOVER_WEIGHTS := {"DIF": 60.0, "CEN": 30.0, "ATT": 10.0}
+
+## Scala del peso di prossimità: dentro la fascia estratta il recupero premia
+## chi si trova più vicino al punto in cui la palla è tornata giocabile.
+const RECOVERY_DISTANCE_SCALE: float = 1000.0
+
+## Archetipo che raddoppia le probabilità di raccogliere la palla vagante (GDD §10.2).
+const CALAMITA_ARCHETYPE_ID := "calamita"
+
+## Talismano che ribalta le fasce della respinta post-tiro (GDD §10.1).
+const TALISMAN_REMOTE_CLEARANCE := "rinvio_telecomandato"
+
+## Origine della prossima azione: decide chi riceve la palla in
+## [method start_action]. Solo KICKOFF e GOAL_KICK la consegnano al portiere,
+## come vuole il GDD §4; REBOUND e TURNOVER passano dalle fasce di respinta.
+enum Restart {
+	KICKOFF,
+	GOAL_KICK,
+	REBOUND,
+	TURNOVER,
+}
+
 ## Rosa controllata dal giocatore.
 var player_team: TeamData = null
 
@@ -136,6 +166,29 @@ var resource_mode: MatchController.ResourceMode = MatchController.ResourceMode.M
 var passes_per_action: int = DEFAULT_PASSES_PER_ACTION
 var shots_per_action: int = DEFAULT_SHOTS_PER_ACTION
 
+## Motivo della prossima ripartenza, da Restart: il portiere batte solo a inizio
+## partita o su rimessa dal fondo dopo un gol subito (GDD §4).
+var pending_restart: int = Restart.KICKOFF
+
+## Punto in cui la palla è tornata giocabile: parata del portiere, intercetto
+## della sagoma o punto della palla persa (GDD §4 e §4.1).
+var recovery_point: Vector2 = Vector2.ZERO
+
+## Sagoma avversaria che ha intercettato l'ultimo passaggio, null se è riuscito.
+var last_interceptor: PlayerData = null
+
+## Compagno che ha raccolto la palla all'ultima ripartenza (GDD §4 e §4.1).
+var last_recovered_by: PlayerData = null
+
+## Generatore delle estrazioni di respinta post-tiro e palla persa (GDD §4, §4.1).
+var _rng := RandomNumberGenerator.new()
+var _seeded: bool = false
+
+## Fissa il seme delle estrazioni di respinta, per partite ripetibili nei test.
+func set_seed(seed_value: int) -> void:
+	_rng.seed = seed_value
+	_seeded = true
+
 
 ## Prepara la partita: azzera punteggio e contatori, carica le risorse della
 ## squadra dal GDD §2.3, fissa i punti parata del portiere avversario (GDD §7)
@@ -162,6 +215,10 @@ func start_match(player: TeamData, opponent: TeamData = null, gk_save_points: fl
 	shots_used = 0
 	last_result = {}
 	accumulated_action_power = 0.0
+	pending_restart = Restart.KICKOFF
+	recovery_point = Vector2.ZERO
+	last_interceptor = null
+	last_recovered_by = null
 	match_phase = MatchPhase.SETUP
 	_refill_counters()
 	start_action()
@@ -191,6 +248,8 @@ func start_action(carrier: PlayerData = null) -> bool:
 		push_warning("MatchController: nessun titolare disponibile per battere")
 		return false
 	ball_position = get_player_position(current_ball_carrier)
+	last_recovered_by = current_ball_carrier
+	last_interceptor = null
 	match_phase = MatchPhase.PLAYER_TURN
 	return true
 
@@ -238,6 +297,8 @@ func execute_pass(target_player: PlayerData) -> Dictionary:
 		accumulated_action_power = resolver["action_power"]
 		current_ball_carrier = target_player
 		ball_position = target_pos
+	else:
+		_apply_interception(resolver["intercepted_by"] as PlayerData, target_pos)
 
 	var turnover: bool = resolver["turnover"]
 	if turnover:
@@ -256,6 +317,8 @@ func execute_pass(target_player: PlayerData) -> Dictionary:
 		"passes_left": passes_left,
 		"consumed_pass": consumes,
 		"carrier": current_ball_carrier,
+		"interceptor": last_interceptor,
+		"recovery_point": recovery_point,
 		"phase": match_phase,
 		"resolver": resolver,
 	}
@@ -309,11 +372,16 @@ func execute_shot() -> Dictionary:
 	player_team.reset_all_touches()
 	accumulated_action_power = 0.0
 	current_ball_carrier = null
+	last_interceptor = null
+	recovery_point = goalkeeper_position
+	ball_position = goalkeeper_position
 	if scored:
 		score_player += 1
 		match_phase = MatchPhase.GOAL
+		pending_restart = Restart.GOAL_KICK
 	else:
 		match_phase = MatchPhase.TURNOVER
+		pending_restart = Restart.REBOUND
 	_check_match_end()
 	last_result = {
 		"executed": true,
@@ -329,6 +397,8 @@ func execute_shot() -> Dictionary:
 		"shots_left": shots_left,
 		"phase": match_phase,
 		"match_result": match_result,
+		"restart": pending_restart,
+		"recovery_point": recovery_point,
 		"resolver": resolver,
 	}
 	return last_result
@@ -427,6 +497,10 @@ func get_state_snapshot() -> Dictionary:
 		"ball_position": ball_position,
 		"carrier": current_ball_carrier,
 		"obstacles": obstacles.size(),
+		"restart": pending_restart,
+		"recovery_point": recovery_point,
+		"recovered_by": last_recovered_by,
+		"interceptor": last_interceptor,
 	}
 
 
@@ -451,11 +525,22 @@ func _resources_for(team_name: String) -> Vector2i:
 	return resources
 
 
-## Battitore dell'azione: [param carrier] se è schierato, altrimenti il portiere
-## dello slot 1 (GDD §4) e in ultima istanza il primo titolare disponibile.
+## Battitore dell'azione (GDD §4 e §4.1).
+##
+## [param carrier] esplicito ha sempre la precedenza. Senza indicazioni decide
+## [member pending_restart]: il portiere batte solo a inizio partita
+## (Restart.KICKOFF) o su rimessa dal fondo dopo un gol (Restart.GOAL_KICK),
+## mentre la respinta post-tiro (Restart.REBOUND) e la palla persa
+## (Restart.TURNOVER) passano dalle fasce di reparto del GDD e finiscono sempre
+## a un giocatore di movimento. Il portiere resta l'ultimo ripiego solo se in
+## campo non c'è nessun uomo di movimento.
 func _resolve_carrier(carrier: PlayerData) -> PlayerData:
 	if carrier != null and player_team.find_slot(carrier) >= 1:
 		return carrier
+	if pending_restart == Restart.REBOUND or pending_restart == Restart.TURNOVER:
+		var recovered := _pick_recovering_player(_restart_weights())
+		if recovered != null:
+			return recovered
 	var keeper := player_team.get_starter(STARTER_SLOT)
 	if keeper != null:
 		return keeper
@@ -465,6 +550,113 @@ func _resolve_carrier(carrier: PlayerData) -> PlayerData:
 			return player
 	return null
 
+
+## Fasce di reparto della ripartenza in corso: respinta difensiva sulla palla
+## persa (GDD §4.1), respinta offensiva post-tiro (GDD §4) eventualmente
+## ribaltata dal Rinvio Telecomandato (GDD §10.1).
+func _restart_weights() -> Dictionary:
+	if pending_restart == Restart.TURNOVER:
+		return TURNOVER_WEIGHTS
+	if _has_talisman(TALISMAN_REMOTE_CLEARANCE):
+		return REBOUND_WEIGHTS_REMOTE
+	return REBOUND_WEIGHTS
+
+
+## Estrae il reparto con le probabilità del GDD, poi dentro quel reparto sorteggia
+## il ricevente pesando la vicinanza a [member recovery_point]; la Calamita
+## raddoppia il proprio peso (GDD §10.2). Null se non c'è nessun uomo di movimento.
+func _pick_recovering_player(weights: Dictionary) -> PlayerData:
+	var role := _pick_role(weights)
+	if role.is_empty():
+		return null
+	var candidates := _outfielders_by_role(role)
+	var total := 0.0
+	var scores: Array[float] = []
+	for player in candidates:
+		var distance := recovery_point.distance_to(get_player_position(player))
+		var score := RECOVERY_DISTANCE_SCALE / (RECOVERY_DISTANCE_SCALE + distance)
+		if _has_archetype(player, CALAMITA_ARCHETYPE_ID):
+			score *= 2.0
+		scores.append(score)
+		total += score
+	if candidates.is_empty() or total <= 0.0:
+		return null
+	_ensure_seeded()
+	var draw := _rng.randf() * total
+	for index in candidates.size():
+		draw -= scores[index]
+		if draw <= 0.0:
+			return candidates[index]
+	return candidates[candidates.size() - 1]
+
+
+## Reparto sorteggiato fra quelli davvero presenti in campo: i pesi delle fasce
+## vuote vengono ridistribuiti sulle altre, così la somma resta il 100%.
+func _pick_role(weights: Dictionary) -> String:
+	var total := 0.0
+	for role in weights:
+		if not _outfielders_by_role(role).is_empty():
+			total += float(weights[role])
+	if total <= 0.0:
+		return ""
+	_ensure_seeded()
+	var draw := _rng.randf() * total
+	for role in weights:
+		if _outfielders_by_role(role).is_empty():
+			continue
+		draw -= float(weights[role])
+		if draw <= 0.0:
+			return role
+	return ""
+
+
+## Titolari di movimento del reparto indicato: lo slot del portiere è escluso,
+## perché la palla torna a lui solo su rimessa dal fondo (GDD §4).
+func _outfielders_by_role(role: String) -> Array[PlayerData]:
+	var found: Array[PlayerData] = []
+	if player_team == null:
+		return found
+	for slot in range(1, TeamData.LINEUP_SIZE + 1):
+		if slot == STARTER_SLOT:
+			continue
+		var player := player_team.get_starter(slot)
+		if player != null and player.role == role:
+			found.append(player)
+	return found
+
+
+## True se il giocatore ha l'archetipo indicato equipaggiato (GDD §10.2).
+func _has_archetype(player: PlayerData, archetype_id: String) -> bool:
+	if player == null:
+		return false
+	for archetype in player.archetypes:
+		var data := archetype as ArchetypeData
+		if data != null and data.id == archetype_id:
+			return true
+	return false
+
+
+## True se la squadra ha il talismano indicato equipaggiato (GDD §10.1).
+func _has_talisman(talisman_id: String) -> bool:
+	if player_team == null:
+		return false
+	return player_team.find_talisman(talisman_id) != null
+
+
+## Passaggio intercettato (GDD §4.1): la sfera resta alla sagoma avversaria che
+## l'ha rubata, il possesso del giocatore cade e la ripartenza seguirà le fasce
+## della respinta difensiva.
+func _apply_interception(interceptor: PlayerData, fallback_pos: Vector2) -> void:
+	last_interceptor = interceptor
+	var stolen_at := fallback_pos
+	for entry in obstacles:
+		if entry.get("player") == interceptor:
+			stolen_at = entry.get("position", fallback_pos)
+			break
+	ball_position = stolen_at
+	recovery_point = stolen_at
+	current_ball_carrier = null
+	pending_restart = Restart.TURNOVER
 
 ## False se il passatore ha il Baller equipaggiato: il suo passaggio non scala
 ## il contatore dei passaggi disponibili (GDD §10.2).
@@ -479,13 +671,16 @@ func _consumes_pass(passer: PlayerData) -> bool:
 
 
 ## Palla persa (GDD §4.1): l'azione muore, i tocchi si azzerano e la Potenza
-## Azione torna a zero. Il destinatario della respinta difensiva verrà passato
-## alla prossima [method start_action].
+## Azione torna a zero. La ripartenza è marcata Restart.TURNOVER, così la
+## prossima [method start_action] estrae il ricevente dalla respinta difensiva
+## 60% DIF - 30% CEN - 10% ATT e non dal portiere.
 func _apply_turnover() -> void:
 	accumulated_action_power = 0.0
 	current_ball_carrier = null
 	if player_team != null:
 		player_team.reset_all_touches()
+	recovery_point = ball_position
+	pending_restart = Restart.TURNOVER
 	match_phase = MatchPhase.TURNOVER
 	_check_match_end()
 
@@ -521,3 +716,10 @@ func _rejected(reason: String) -> Dictionary:
 		"shots_left": shots_left,
 	}
 	return last_result
+
+
+func _ensure_seeded() -> void:
+	if _seeded:
+		return
+	_rng.randomize()
+	_seeded = true

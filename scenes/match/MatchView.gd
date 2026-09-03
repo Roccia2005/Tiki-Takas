@@ -301,13 +301,15 @@ func _after_move() -> void:
 		return
 	if controller.current_ball_carrier == null:
 		_input_mode = InputMode.WAITING_RESTART
-		_hud.set_hint("Clic o SPAZIO per la prossima azione")
+		_hud.set_hint(_restart_hint())
 		return
 	_input_mode = InputMode.IDLE
 	_hud.set_hint(_default_hint())
 
 
-## Riparte con una nuova azione dai piedi del portiere (GDD §4).
+## Riparte con una nuova azione: il portatore lo decide MatchController secondo le
+## fasce di respinta del GDD §4 e §4.1, il portiere entra in gioco solo su
+## rimessa dal fondo o a inizio partita.
 func _start_next_action() -> void:
 	if controller.is_match_over():
 		_input_mode = InputMode.MATCH_OVER
@@ -319,9 +321,27 @@ func _start_next_action() -> void:
 		return
 	_ball.snap_to(controller.ball_position)
 	_input_mode = InputMode.IDLE
-	_hud.flash("AZIONE #%d" % controller.action_index, MatchHUD.ACCENT)
+	_hud.flash(_restart_message(), MatchHUD.ACCENT)
 	_refresh_all()
 	_hud.set_hint(_default_hint())
+
+
+## Annuncio della ripartenza: numero d'azione e chi ha raccolto la palla.
+func _restart_message() -> String:
+	var recovered := controller.last_recovered_by
+	if recovered == null:
+		return "AZIONE #%d" % controller.action_index
+	return "AZIONE #%d   PALLA A %s" % [controller.action_index, recovered.player_name.to_upper()]
+
+
+## Suggerimento con la palla fuori dal possesso: dice dove si trova la sfera
+## prima della ripartenza (GDD §4 e §4.1).
+func _restart_hint() -> String:
+	if controller.last_interceptor != null:
+		return "Palla a %s: clic o SPAZIO per la prossima azione" % controller.last_interceptor.player_name
+	if controller.match_phase == MatchController.MatchPhase.GOAL:
+		return "Rimessa dal fondo: clic o SPAZIO per la prossima azione"
+	return "Clic o SPAZIO per la prossima azione"
 
 
 ## Annuncia la fine del match una sola volta per partita collegata (GDD §7).
@@ -337,12 +357,13 @@ func _refresh_all() -> void:
 	_hud.refresh()
 
 
-## Allinea la palla al portatore e ne accende il bagliore con la Potenza Azione.
+## Allinea la palla alla sua posizione sul campo e ne accende il bagliore con la
+## Potenza Azione. Senza portatore la sfera resta visibile dove il gioco l'ha
+## lasciata, cioè sulla sagoma che ha intercettato o sulla respinta del portiere
+## avversario: non viene più nascosta né riportata d'ufficio al battitore
+## (GDD §4 e §4.1).
 func _refresh_ball() -> void:
 	_ball.set_power(controller.accumulated_action_power)
-	if controller.current_ball_carrier == null:
-		_ball.visible = false
-		return
 	_ball.visible = true
 	_ball.move_to(controller.ball_position)
 
@@ -371,15 +392,14 @@ func _bind_views() -> void:
 		_ball.visible = false
 		_hud.set_hint("Nessuna partita collegata")
 		return
-	if controller.current_ball_carrier != null:
-		_ball.snap_to(controller.ball_position)
+	_ball.snap_to(controller.ball_position)
 	_refresh_all()
 	if controller.is_match_over():
 		_input_mode = InputMode.MATCH_OVER
 		_hud.set_hint(_match_over_hint())
 	elif controller.current_ball_carrier == null:
 		_input_mode = InputMode.WAITING_RESTART
-		_hud.set_hint("Clic o SPAZIO per la prossima azione")
+		_hud.set_hint(_restart_hint())
 	else:
 		_input_mode = InputMode.IDLE
 		_hud.set_hint(_default_hint())
