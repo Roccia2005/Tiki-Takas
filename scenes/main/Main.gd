@@ -110,14 +110,19 @@ func open_shop() -> void:
 	_enter_stage(Stage.SHOP)
 
 
-## Mostra solo i nodi della fase richiesta e sospende le viste in pausa.
+## Mostra solo i nodi della fase richiesta e sospende le viste in pausa. Il
+## campo va spento con [method MatchView.set_view_active]: il suo HUD vive in un
+## CanvasLayer, che non eredita la visibilità del Node2D e resterebbe dipinto
+## sopra mercato e schermate di stato (GDD §12).
 func _enter_stage(next_stage: int) -> void:
 	stage = next_stage
 	var playing := stage == Stage.MATCH or stage == Stage.BOSS_MATCH
-	_match_view.visible = playing
-	_match_view.process_mode = Node.PROCESS_MODE_INHERIT if playing else Node.PROCESS_MODE_DISABLED
-	_shop_view.visible = stage == Stage.SHOP
+	var shopping := stage == Stage.SHOP
+	_match_view.set_view_active(playing)
+	_shop_view.visible = shopping
+	_shop_view.process_mode = Node.PROCESS_MODE_INHERIT if shopping else Node.PROCESS_MODE_DISABLED
 	_title.visible = stage == Stage.MENU
+	_result.visible = false
 	_game_over.visible = stage == Stage.GAME_OVER
 	_victory.visible = stage == Stage.VICTORY
 
@@ -139,20 +144,26 @@ func _on_match_finished(won: bool) -> void:
 
 
 ## Il riquadro di fine partita è stato chiuso: la fase successiva dipende dallo
-## stato in cui la run è entrata (GDD §3).
+## stato in cui la run è entrata (GDD §3). Ogni ramo esce subito con un return,
+## così [method _advance] non può scavalcare il Calcio Mercato né una schermata
+## finale: avanza di partita solo in RunState.RUN_ACTIVE.
 func _on_result_continue() -> void:
 	_result.visible = false
 	if run == null:
 		return
-	match run.run_state:
-		GameManager.RunState.GAME_OVER:
-			_show_game_over()
-		GameManager.RunState.CUP_VICTORY:
-			_show_victory()
-		GameManager.RunState.SHOP_PHASE:
-			open_shop()
-		_:
-			_advance()
+	if run.run_state == GameManager.RunState.SHOP_PHASE:
+		open_shop()
+		return
+	if run.run_state == GameManager.RunState.GAME_OVER:
+		_show_game_over()
+		return
+	if run.run_state == GameManager.RunState.CUP_VICTORY:
+		_show_victory()
+		return
+	if run.run_state == GameManager.RunState.RUN_ACTIVE:
+		_advance()
+		return
+	push_warning("Main: fase %s inattesa a fine partita, nessuna transizione" % run.get_state_name())
 
 
 ## Uscita dal mercato: si chiude la visita e si passa al match successivo.

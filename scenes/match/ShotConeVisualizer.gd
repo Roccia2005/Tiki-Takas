@@ -6,8 +6,9 @@ extends Node2D
 ##
 ## Riproduce a schermo la geometria di [method ActionResolver.is_in_shot_cone]:
 ## semiapertura di 18 gradi dal tiratore verso la porta e nessuna sagoma più
-## lontana della porta stessa. Le sagome dentro il cono vengono cerchiate e il
-## malus complessivo di -15 punti per sagoma (GDD §4.1) è scritto in campo.
+## lontana della porta stessa. Le sagome dentro il cono vengono solo cerchiate:
+## il malus di -15 punti per sagoma (GDD §4.1) è disponibile con
+## [method get_malus] ma non viene più scritto in campo (GDD §12).
 
 const ARC_SAMPLES: int = 18
 const EDGE_DASH: float = 18.0
@@ -15,14 +16,11 @@ const EDGE_WIDTH: float = 2.5
 const AXIS_WIDTH: float = 1.5
 const MARKER_RADIUS: float = 40.0
 const MARKER_WIDTH: float = 3.0
-const LABEL_FONT_SIZE: int = 18
-const LABEL_BOX_WIDTH: float = 300.0
 
 const CONE_FILL := Color(1.0, 0.82, 0.4, 0.10)
 const CONE_EDGE := Color("ffd166")
 const CONE_AXIS := Color(1.0, 0.82, 0.4, 0.45)
 const BLOCKED_COLOR := Color("ff2e57")
-const LABEL_BACKDROP := Color(0.03, 0.08, 0.07, 0.75)
 
 ## Vertice del cono: la posizione del tiratore in coordinate pitch (GDD §9).
 var origin: Vector2 = Vector2.ZERO
@@ -95,24 +93,11 @@ func _draw() -> void:
 	_draw_blocking_markers()
 
 
-## Reticoli sulle sagome dentro il cono e malus complessivo (GDD §4.1).
+## Cerchia le sagome che ostruiscono il cono, senza scritte in campo (GDD §4.1).
 func _draw_blocking_markers() -> void:
-	if blocking.is_empty():
-		return
 	for entry in blocking:
 		var field_pos: Vector2 = entry.get("position", Vector2.ZERO)
 		draw_arc(field_pos, MARKER_RADIUS, 0.0, TAU, 32, BLOCKED_COLOR, MARKER_WIDTH)
-		draw_line(field_pos + Vector2(-MARKER_RADIUS, 0.0), field_pos + Vector2(MARKER_RADIUS, 0.0), Color(BLOCKED_COLOR.r, BLOCKED_COLOR.g, BLOCKED_COLOR.b, 0.6), 1.5)
-		draw_line(field_pos + Vector2(0.0, -MARKER_RADIUS), field_pos + Vector2(0.0, MARKER_RADIUS), Color(BLOCKED_COLOR.r, BLOCKED_COLOR.g, BLOCKED_COLOR.b, 0.6), 1.5)
-	var font := ThemeDB.fallback_font
-	if font == null:
-		return
-	var text := "%d sagome nel cono  -%.0f potenza" % [blocking.size(), get_malus()]
-	var anchor := origin.lerp(goal_position, 0.55) + Vector2(0.0, -46.0)
-	var text_size := font.get_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, LABEL_FONT_SIZE)
-	var backdrop := Rect2(anchor - Vector2(text_size.x * 0.5 + 8.0, text_size.y * 0.8 + 4.0), text_size + Vector2(16.0, 10.0))
-	draw_rect(backdrop, LABEL_BACKDROP, true)
-	draw_string(font, anchor - Vector2(LABEL_BOX_WIDTH * 0.5, 0.0), text, HORIZONTAL_ALIGNMENT_CENTER, LABEL_BOX_WIDTH, LABEL_FONT_SIZE, BLOCKED_COLOR)
 
 
 ## Sagome la cui posizione ricade nel cono di tiro (GDD §4).

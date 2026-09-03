@@ -6,8 +6,9 @@ extends Control
 ## Legge lo stato di [MatchController] (e, se disponibile, di [GameManager]) e
 ## lo scrive a schermo: punteggio, passaggi e tiri residui, Potenza Azione
 ## accumulata e punti parata rimasti al portiere avversario (GDD §4 e §7).
-## I messaggi rapidi tipo "GOL!" o "INTERCETTATO" compaiono al centro e
-## sfumano da soli. Nessun asset esterno e nessuna logica di gioco: sola lettura.
+## I messaggi rapidi tipo "GOL" o "INTERCETTATO" compaiono al centro in corpo
+## contenuto e sfumano da soli. Nessun asset esterno e nessuna logica di gioco:
+## sola lettura.
 
 ## Risoluzione di riferimento del layout (GDD §12).
 const DESIGN_SIZE := Vector2(1920.0, 1080.0)
@@ -18,7 +19,7 @@ const SAVE_PANEL := Rect2(1204.0, 24.0, 660.0, 96.0)
 const RESOURCE_PANEL := Rect2(56.0, 960.0, 660.0, 96.0)
 const POWER_PANEL := Rect2(1204.0, 960.0, 660.0, 96.0)
 const HINT_RECT := Rect2(740.0, 992.0, 440.0, 40.0)
-const FLASH_RECT := Rect2(360.0, 392.0, 1200.0, 140.0)
+const FLASH_RECT := Rect2(660.0, 468.0, 600.0, 84.0)
 
 ## Barra dei punti parata dentro SAVE_PANEL.
 const SAVE_BAR := Rect2(1224.0, 92.0, 620.0, 12.0)
@@ -26,6 +27,9 @@ const SAVE_BAR := Rect2(1224.0, 92.0, 620.0, 12.0)
 ## Durata in secondi di un messaggio rapido e della sua dissolvenza.
 const FLASH_DURATION: float = 1.4
 const FLASH_FADE: float = 0.5
+
+## Corpo del messaggio rapido: contenuto, per non coprire il campo (GDD §12).
+const FLASH_FONT_SIZE: int = 44
 
 const PANEL_FILL := Color(0.03, 0.09, 0.08, 0.78)
 const PANEL_EDGE := Color(0.27, 0.94, 0.75, 0.35)
@@ -188,7 +192,7 @@ func _build_labels() -> void:
 	_phase_label = _add_label("PhaseLabel", _inset(POWER_PANEL, 20.0, 56.0, 32.0), 17, HORIZONTAL_ALIGNMENT_RIGHT, TEXT_DIM)
 	_hint_label = _add_label("HintLabel", HINT_RECT, 18, HORIZONTAL_ALIGNMENT_CENTER, TEXT_DIM)
 	_hint_label.text = "Trascina dal portatore: su un compagno passi, verso la porta tiri"
-	_flash_label = _add_label("FlashLabel", FLASH_RECT, 76, HORIZONTAL_ALIGNMENT_CENTER, FLASH_GOAL)
+	_flash_label = _add_label("FlashLabel", FLASH_RECT, FLASH_FONT_SIZE, HORIZONTAL_ALIGNMENT_CENTER, FLASH_GOAL)
 
 
 ## Riquadro di testo interno a un pannello dell'HUD.

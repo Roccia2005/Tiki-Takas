@@ -62,6 +62,7 @@ var _cone: ShotConeVisualizer = null
 var _trajectory: TrajectoryLine = null
 var _ball: BallToken = null
 var _hud: MatchHUD = null
+var _hud_layer: CanvasLayer = null
 
 var _tokens: Dictionary[int, PlayerToken] = {}
 var _obstacle_tokens: Array[PlayerToken] = []
@@ -87,6 +88,20 @@ func bind_controller(match_controller: MatchController, game_run: GameManager = 
 	_input_mode = InputMode.IDLE
 	_finished_emitted = false
 	_bind_views()
+
+
+## Accende o spegne l'intera scena della partita, HUD compreso: [Main] la chiama
+## a ogni cambio di fase (GDD §3). Serve un metodo dedicato perché [member
+## Node2D.visible] non arriva a [code]HUDLayer[/code], che è un [CanvasLayer] e
+## quindi disegna sul proprio canvas: senza questo passaggio i pannelli del match
+## resterebbero dipinti sopra Calcio Mercato e schermate di stato (GDD §12).
+func set_view_active(active: bool) -> void:
+	visible = active
+	process_mode = Node.PROCESS_MODE_INHERIT if active else Node.PROCESS_MODE_DISABLED
+	if _hud_layer == null:
+		_hud_layer = get_node_or_null(NodePath("HUDLayer")) as CanvasLayer
+	if _hud_layer != null:
+		_hud_layer.visible = active
 
 
 ## Avvia una partita di prova completa passando da [GameManager], così valgono
@@ -196,7 +211,9 @@ func _end_aim() -> void:
 
 
 ## Aggiorna traiettoria, cono di tiro ed evidenziazioni mentre il mouse si
-## muove: verde passaggio in gittata, ambra fuori gittata, rosso non valido.
+## muove: verde passaggio in gittata, ambra fuori gittata, rosso non valido. I
+## numeri restano nei pannelli dell'HUD, la linea di mira non porta etichette
+## galleggianti (GDD §12).
 func _update_aim(field_pos: Vector2) -> void:
 	var carrier := controller.current_ball_carrier
 	if carrier == null:
@@ -209,67 +226,36 @@ func _update_aim(field_pos: Vector2) -> void:
 	if _hovered != null:
 		var to := _hovered.position
 		var state := TrajectoryLine.AimState.PASS_VALID
-		var label := _pass_preview(carrier, from, to)
 		if not controller.can_pass():
 			state = TrajectoryLine.AimState.PASS_INVALID
-			label = "PASSAGGI ESAURITI"
 		elif not ActionResolver.is_pass_in_range(carrier, from, to):
 			state = TrajectoryLine.AimState.PASS_OUT_OF_RANGE
-		_trajectory.aim(from, to, state, label)
+		_trajectory.aim(from, to, state)
 		_cone.clear_cone()
 	elif PitchView.goal_aim_zone().has_point(field_pos):
-		var goal := PitchView.enemy_goal_position()
 		var state := TrajectoryLine.AimState.SHOT
-		var label := _shot_preview(carrier, from)
 		if not controller.can_shoot():
 			state = TrajectoryLine.AimState.PASS_INVALID
-			label = "TIRI ESAURITI"
-		_trajectory.aim(from, goal, state, label)
+		_trajectory.aim(from, PitchView.enemy_goal_position(), state)
 		_cone.show_cone(from, controller.obstacles)
 	else:
-		_trajectory.aim(from, field_pos, TrajectoryLine.AimState.PASS_INVALID, "NESSUN BERSAGLIO")
+		_trajectory.aim(from, field_pos, TrajectoryLine.AimState.PASS_INVALID)
 		_cone.clear_cone()
 	_refresh_tokens()
 
 
-## Anteprima del passaggio: distanza percorsa e Potenza Azione guadagnata al
-## netto della penalità di gittata (GDD §4.1).
-func _pass_preview(carrier: PlayerData, from: Vector2, to: Vector2) -> String:
-	var distance := ActionResolver.calculate_distance(from, to)
-	var penalty := ActionResolver.calculate_range_penalty(distance, carrier.range_dist)
-	var gain := carrier.get_effective_power() - penalty
-	if penalty > 0.0:
-		return "%.0f u   %+.1f potenza   -%.1f gittata" % [distance, gain, penalty]
-	return "%.0f u   %+.1f potenza" % [distance, gain]
-
-
-## Anteprima del tiro: danno stimato sui punti parata con malus delle sagome e
-## decadimento da distanza già applicati (GDD §4.1 e §7).
-func _shot_preview(shooter: PlayerData, from: Vector2) -> String:
-	var goal := PitchView.enemy_goal_position()
-	var in_cone := ActionResolver.filter_defenders_in_cone(controller.obstacles, from, goal)
-	var malus := ActionResolver.OBSTACLE_POWER_MALUS * float(in_cone.size())
-	var total := maxf(0.0, controller.accumulated_action_power + shooter.get_effective_power() - malus)
-	var distance := ActionResolver.calculate_distance(from, goal)
-	var multiplier := ActionResolver.calculate_distance_multiplier(distance, shooter.range_dist)
-	return "TIRO   ~%.0f danno   %d%% gittata" % [total * multiplier, roundi(multiplier * 100.0)]
-
-
-## Passaggio al compagno indicato e messaggio di esito (GDD §4).
+## Passaggio al compagno indicato e messaggio di esito minimale: il nome
+## dell'intercettante resta nel suggerimento in basso (GDD §4 e §12).
 func _do_pass(target: PlayerData) -> void:
 	var result := controller.execute_pass(target)
 	if not bool(result.get("executed", false)):
 		_hud.flash(str(result.get("reason", "mossa non valida")).to_upper(), MatchHUD.FLASH_BAD)
 	elif not bool(result.get("success", false)):
-		var thief: PlayerData = result.get("intercepted_by")
-		var stolen := "INTERCETTATO"
-		if thief != null:
-			stolen = "INTERCETTATO DA %s" % thief.player_name.to_upper()
-		_hud.flash(stolen, MatchHUD.FLASH_BAD)
+		_hud.flash("INTERCETTATO", MatchHUD.FLASH_BAD)
 	elif bool(result.get("turnover", false)):
 		_hud.flash("PALLA PERSA", MatchHUD.FLASH_BAD)
 	else:
-		_hud.flash("POTENZA AZIONE %.1f" % float(result.get("action_power", 0.0)), MatchHUD.ACCENT)
+		_hud.flash("PASSAGGIO", MatchHUD.ACCENT)
 	_after_move()
 
 
@@ -281,11 +267,11 @@ func _do_shot() -> void:
 		_after_move()
 		return
 	if bool(result.get("is_goal", false)):
-		_hud.flash("GOL!", MatchHUD.FLASH_GOAL)
+		_hud.flash("GOL", MatchHUD.FLASH_GOAL)
 	elif bool(result.get("blocked", false)):
 		_hud.flash("TIRO MURATO", MatchHUD.FLASH_BAD)
 	else:
-		_hud.flash("PARATA!   -%.0f" % float(result.get("damage", 0.0)), MatchHUD.FLASH_SAVE)
+		_hud.flash("PARATA", MatchHUD.FLASH_SAVE)
 	_after_move()
 
 
@@ -326,12 +312,10 @@ func _start_next_action() -> void:
 	_hud.set_hint(_default_hint())
 
 
-## Annuncio della ripartenza: numero d'azione e chi ha raccolto la palla.
+## Annuncio minimale della ripartenza: solo il numero dell'azione, chi ha
+## raccolto la palla resta nel suggerimento in basso (GDD §12).
 func _restart_message() -> String:
-	var recovered := controller.last_recovered_by
-	if recovered == null:
-		return "AZIONE #%d" % controller.action_index
-	return "AZIONE #%d   PALLA A %s" % [controller.action_index, recovered.player_name.to_upper()]
+	return "AZIONE #%d" % controller.action_index
 
 
 ## Suggerimento con la palla fuori dal possesso: dice dove si trova la sfera
@@ -369,19 +353,18 @@ func _refresh_ball() -> void:
 
 
 ## Riporta pedine e sagome sullo stato del controller: posizioni dal modulo
-## attivo, portatore, bersagli ricevibili e sagome dentro il cono (GDD §4.1).
+## attivo, portatore di palla e sagome dentro il cono di tiro (GDD §4.1).
 func _refresh_tokens() -> void:
 	var carrier := controller.current_ball_carrier
-	var aiming := _input_mode == InputMode.AIMING
 	for slot in _tokens:
 		var token: PlayerToken = _tokens[slot]
 		token.set_field_position(controller.get_player_position(token.player))
-		token.set_state(token.player == carrier, aiming and token.player != carrier, token == _hovered)
+		token.set_state(token.player == carrier)
 	var in_cone: Array[PlayerData] = []
 	if carrier != null:
 		in_cone = ActionResolver.filter_defenders_in_cone(controller.obstacles, controller.ball_position, PitchView.enemy_goal_position())
 	for shape in _obstacle_tokens:
-		shape.set_state(false, false, false, in_cone.has(shape.player))
+		shape.set_state(false, in_cone.has(shape.player))
 
 
 ## Collega la partita a HUD e pedine e riporta la palla al battitore.
@@ -506,8 +489,8 @@ func _resolve_nodes() -> void:
 	_trajectory = _child_of(_pitch_root, "TrajectoryLine", TrajectoryLine.new) as TrajectoryLine
 	_tokens_root = _child_of(_pitch_root, "TokensRoot", Node2D.new) as Node2D
 	_ball = _child_of(_pitch_root, "BallToken", BallToken.new) as BallToken
-	var hud_layer := _child_of(self, "HUDLayer", CanvasLayer.new)
-	_hud = _child_of(hud_layer, "MatchHUD", _make_hud) as MatchHUD
+	_hud_layer = _child_of(self, "HUDLayer", CanvasLayer.new) as CanvasLayer
+	_hud = _child_of(_hud_layer, "MatchHUD", _make_hud) as MatchHUD
 
 
 ## Figlio con quel nome se già presente nella scena, altrimenti il nodo
