@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BossData" load_steps=3 format=3]
+
+[ext_resource type="Script" uid="uid://c4rnwa27kq1yq" path="res://scripts/resources/BossData.gd" id="1_boss"]
+[ext_resource type="Resource" path="res://data/formations/4-2-4.tres" id="2_form"]
+
+[resource]
+resource_name = "Portiere Para-Rigori"
+script = ExtResource("1_boss")
+id = "portiere_para_rigori"
+boss_name = "Portiere Para-Rigori"
+cup_level = 5
+special_rule = "close_range_penalty"
+description = "Implacabile nelle uscite basse ma vulnerabile da fuori: i tiri sotto le 250 unità subiscono una penalità del -40% al danno, mentre le conclusioni oltre le 350 unità non subiscono alcun decadimento da distanza."
+formation = ExtResource("2_form")

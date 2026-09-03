@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BossData" load_steps=3 format=3]
+
+[ext_resource type="Script" uid="uid://c4rnwa27kq1yq" path="res://scripts/resources/BossData.gd" id="1_boss"]
+[ext_resource type="Resource" path="res://data/formations/4-4-2.tres" id="2_form"]
+
+[resource]
+resource_name = "Terreno Pesante"
+script = ExtResource("1_boss")
+id = "terreno_pesante"
+boss_name = "Terreno Pesante"
+cup_level = 2
+special_rule = "range_reduction"
+description = "Campo fangoso e allagato che frena il rotolamento del pallone: la Gittata di tutti gli 11 giocatori in campo viene ridotta del -30%."
+formation = ExtResource("2_form")

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BossData" load_steps=3 format=3]
+
+[ext_resource type="Script" uid="uid://c4rnwa27kq1yq" path="res://scripts/resources/BossData.gd" id="1_boss"]
+[ext_resource type="Resource" path="res://data/formations/4-1-2-1-2.tres" id="2_form"]
+
+[resource]
+resource_name = "Pressing Asfissiante"
+script = ExtResource("1_boss")
+id = "pressing_asfissiante"
+boss_name = "Pressing Asfissiante"
+cup_level = 1
+special_rule = "pass_reduction"
+description = "L'avversario toglie ossigeno e tempo di giocata fin dal primo tocco: il contatore dei Passaggi Disponibili per la partita viene ridotto di -2 (minimo garantito: 1)."
+pass_modifier = -2
+formation = ExtResource("2_form")

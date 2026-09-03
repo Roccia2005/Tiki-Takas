@@ -14,6 +14,7 @@ const FORMATIONS_DIR := "res://data/formations"
 const ARCHETYPES_DIR := "res://data/archetypes"
 const TALISMANS_DIR := "res://data/talismans"
 const TRAININGS_DIR := "res://data/trainings"
+const BOSSES_DIR := "res://data/bosses"
 
 ## I moduli sono indicizzati per [member FormationData.formation_name],
 ## tutto il resto per il proprio campo [code]id[/code].
@@ -21,6 +22,7 @@ static var _formations: Dictionary[String, FormationData] = {}
 static var _archetypes: Dictionary[String, ArchetypeData] = {}
 static var _talismans: Dictionary[String, TalismanData] = {}
 static var _trainings: Dictionary[String, TrainingData] = {}
+static var _bosses: Dictionary[String, BossData] = {}
 static var _indexed: bool = false
 
 
@@ -54,6 +56,14 @@ static func get_training(id: String) -> TrainingData:
 	if not _trainings.has(id):
 		return null
 	return _trainings[id]
+
+
+## Boss corrispondente all'id indicato, es. "il_bunker". Null se assente.
+static func get_boss(id: String) -> BossData:
+	_ensure_indexed()
+	if not _bosses.has(id):
+		return null
+	return _bosses[id]
 
 
 ## Tutti i moduli tattici indicizzati, in ordine alfabetico di file.
@@ -106,6 +116,24 @@ static func get_trainings_by_rarity(rarity: int) -> Array[TrainingData]:
 	return filtered
 
 
+## Tutti i boss di coppa indicizzati (GDD §8).
+static func get_all_bosses() -> Array[BossData]:
+	_ensure_indexed()
+	var list: Array[BossData] = []
+	list.assign(_bosses.values())
+	return list
+
+
+## Boss assegnati all'Ante indicata (GDD §3): il terzo match di ogni Ante ne
+## sorteggia uno da questo elenco.
+static func get_bosses_by_cup(cup_level: int) -> Array[BossData]:
+	var filtered: Array[BossData] = []
+	for boss in get_all_bosses():
+		if boss.cup_level == cup_level:
+			filtered.append(boss)
+	return filtered
+
+
 ## Numero di elementi indicizzati per categoria, utile per diagnostica e test.
 static func get_counts() -> Dictionary[String, int]:
 	_ensure_indexed()
@@ -114,6 +142,7 @@ static func get_counts() -> Dictionary[String, int]:
 		"archetypes": _archetypes.size(),
 		"talismans": _talismans.size(),
 		"trainings": _trainings.size(),
+		"bosses": _bosses.size(),
 	}
 	return counts
 
@@ -124,6 +153,7 @@ static func reload() -> void:
 	_archetypes.clear()
 	_talismans.clear()
 	_trainings.clear()
+	_bosses.clear()
 
 	for resource in _load_directory(FORMATIONS_DIR):
 		var formation := resource as FormationData
@@ -156,6 +186,14 @@ static func reload() -> void:
 		if _trainings.has(training.id):
 			push_warning("GameCatalog: id allenamento duplicato '%s'" % training.id)
 		_trainings[training.id] = training
+
+	for resource in _load_directory(BOSSES_DIR):
+		var boss := resource as BossData
+		if boss == null:
+			continue
+		if _bosses.has(boss.id):
+			push_warning("GameCatalog: id boss duplicato '%s'" % boss.id)
+		_bosses[boss.id] = boss
 
 	_indexed = true
 

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BossData" load_steps=3 format=3]
+
+[ext_resource type="Script" uid="uid://c4rnwa27kq1yq" path="res://scripts/resources/BossData.gd" id="1_boss"]
+[ext_resource type="Resource" path="res://data/formations/5-3-2.tres" id="2_form"]
+
+[resource]
+resource_name = "Il Bunker"
+script = ExtResource("1_boss")
+id = "il_bunker"
+boss_name = "Il Bunker"
+cup_level = 3
+special_rule = "long_range_penalty"
+description = "La retroguardia avversaria si chiude a riccio nella propria trequarti: i tiri da oltre 350 unità di distanza dalla porta subiscono un'ulteriore penalità del -50% al danno calcolato."
+formation = ExtResource("2_form")

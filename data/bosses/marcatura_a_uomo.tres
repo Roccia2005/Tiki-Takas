@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BossData" load_steps=3 format=3]
+
+[ext_resource type="Script" uid="uid://c4rnwa27kq1yq" path="res://scripts/resources/BossData.gd" id="1_boss"]
+[ext_resource type="Resource" path="res://data/formations/4-5-1.tres" id="2_form"]
+
+[resource]
+resource_name = "Marcatura a Uomo"
+script = ExtResource("1_boss")
+id = "marcatura_a_uomo"
+boss_name = "Marcatura a Uomo"
+cup_level = 4
+special_rule = "marked_players"
+description = "Raddoppio asfissiante sui riferimenti principali: a ogni reset palla 2 compagni di movimento casuali vengono etichettati come Marcati e non possono ricevere passaggi per tutta l'azione corrente."
+formation = ExtResource("2_form")

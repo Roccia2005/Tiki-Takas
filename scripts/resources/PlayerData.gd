@@ -42,6 +42,11 @@ const EXTRA_TOUCH_MULTIPLIER: float = 0.25
 ## risorsa ad ArchetypeData: gli elementi attesi sono comunque ArchetypeData.
 @export var archetypes: Array[Resource] = []
 
+## Allenamenti già applicati al cartellino (GDD §5): sono cumulabili
+## all'infinito. Tipizzato Array[Resource] per non legare questa risorsa a
+## TrainingData: gli elementi attesi sono comunque TrainingData.
+@export var trainings: Array[Resource] = []
+
 ## Tocchi già completati da questo giocatore nell'azione in corso.
 ## Stato di runtime, non serializzato: si azzera a ogni tiro in porta.
 var touches_in_action: int = 0

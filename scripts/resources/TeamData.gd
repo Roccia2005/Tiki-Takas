@@ -31,6 +31,11 @@ const MAX_BENCH: int = 3
 ## Modulo tattico attivo, da cui provengono le coordinate degli slot (GDD §9).
 @export var current_formation: FormationData = null
 
+## Talismani equipaggiati dalla squadra, al massimo TalismanData.MAX_EQUIPPED
+## (GDD §10). Tipizzato Array[Resource] per non legare questa risorsa a
+## TalismanData: gli elementi attesi sono comunque TalismanData.
+@export var talismans: Array[Resource] = []
+
 
 ## Schiera [param player] nello slot indicato e lo registra in rosa se non c'è
 ## già. Se il giocatore occupava un altro slot, quello viene liberato: un
@@ -112,6 +117,20 @@ func get_bench() -> Array[PlayerData]:
 ## True se la panchina non ha ancora raggiunto i MAX_BENCH posti (GDD §5).
 func has_bench_space() -> bool:
 	return get_bench().size() < MAX_BENCH
+
+
+## True se la squadra può equipaggiare un altro talismano (GDD §10).
+func has_talisman_space() -> bool:
+	return talismans.size() < TalismanData.MAX_EQUIPPED
+
+
+## Talismano equipaggiato con l'id indicato, null se la squadra non ce l'ha.
+func find_talisman(id: String) -> TalismanData:
+	for entry in talismans:
+		var talisman := entry as TalismanData
+		if talisman != null and talisman.id == id:
+			return talisman
+	return null
 
 
 ## Azzera il contatore tocchi di tutta la rosa: va invocato a ogni tiro in

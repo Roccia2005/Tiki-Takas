@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BossData" load_steps=3 format=3]
+
+[ext_resource type="Script" uid="uid://c4rnwa27kq1yq" path="res://scripts/resources/BossData.gd" id="1_boss"]
+[ext_resource type="Resource" path="res://data/formations/4-3-3.tres" id="2_form"]
+
+[resource]
+resource_name = "Clima Ostile"
+script = ExtResource("1_boss")
+id = "clima_ostile"
+boss_name = "Clima Ostile"
+cup_level = 5
+special_rule = "double_range_decay"
+description = "Raffiche di vento frontali: la perdita di potenza oltre la Gittata raddoppia (coefficiente da 0.002 a 0.004 per unità), mentre i passaggi verso sinistra non consumano cariche passaggio."
+formation = ExtResource("2_form")

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BossData" load_steps=3 format=3]
+
+[ext_resource type="Script" uid="uid://c4rnwa27kq1yq" path="res://scripts/resources/BossData.gd" id="1_boss"]
+[ext_resource type="Resource" path="res://data/formations/4-3-2-1.tres" id="2_form"]
+
+[resource]
+resource_name = "Portiere Saracinesca"
+script = ExtResource("1_boss")
+id = "portiere_saracinesca"
+boss_name = "Portiere Saracinesca"
+cup_level = 6
+special_rule = "save_points_boost"
+description = "Un portiere leggendario al culmine della forma: nessun malus di gameplay, ma i suoi Punti Parata base sono aumentati del +50% rispetto al valore di tabella previsto per il match."
+save_points_multiplier = 1.5
+formation = ExtResource("2_form")
