@@ -16,7 +16,7 @@ res://
 │   │   ├── TeamGenerator.gd     # Generazione rosa e tratti squadra (GDD §2.3, §5, §7)
 │   │   ├── ActionResolver.gd    # Formule passaggio/tiro e balistica (GDD §4, §4.1, §7)
 │   │   ├── GameManager.gd       # [da fare] Gestione run (Ante, Match corrente, FC)
-│   │   └── MatchController.gd   # [da fare] Loop partita (Passaggi, Tiri, Calcoli)
+│   │   └── MatchController.gd   # Loop azione: passaggi, tiri, punti parata (GDD §4, §7)
 │   ├── entities/         # Controller nodi scena (Pedina Giocatore, Ostacolo)
 │   └── resources/        # Definizioni CustomResource (I mattoncini dati)
 │       ├── PlayerData.gd
@@ -40,5 +40,11 @@ res://
 non vanno istanziate né registrate come autoload e non richiedono modifiche a
 `project.godot`. Restano logica pura: nessun riferimento a nodi, scene o UI.
 
-`GameManager` e `MatchController`, che devono conservare lo stato della run e della
-partita, saranno invece gli unici autoload previsti.
+`MatchController` è invece una classe istanziabile (`RefCounted`): va creata una
+per partita e posseduta da `GameManager`, perché conserva lo stato mutabile del
+match (fase, portatore di palla, contatori, punti parata). Anche qui resta logica
+pura: nessun riferimento a nodi, scene o UI, l'interfaccia leggerà lo stato e i
+Dictionary restituiti dai metodi.
+
+`GameManager`, che conserva lo stato della run (Ante, match corrente, FC), resta
+l'unico autoload previsto.
